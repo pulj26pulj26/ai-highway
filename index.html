@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>高速公路工程师 · 帮 AI 盖大楼</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#FFF9EF;color:#33261A;min-height:100vh}
+#app{max-width:680px;margin:0 auto;padding:16px 16px 40px}
+.hidden{display:none!important}
+.btn{display:block;width:100%;padding:15px 20px;border:none;border-radius:14px;font-size:17px;font-weight:bold;cursor:pointer;transition:transform .08s;margin-top:12px}
+.btn:active{transform:scale(.96)}
+.btn-orange{background:#E8703A;color:#fff}
+.btn-green{background:#3F7A5A;color:#fff}
+.btn-soft{background:#F6EBD8;color:#33261A;border:2px solid #EAD9BE}
+.kicker{font-size:12px;letter-spacing:2px;color:#E8703A;font-weight:bold}
+h1.title{font-size:30px;line-height:1.3;margin:8px 0 4px}
+.sub{color:#8A7A66;font-size:15px;line-height:1.7}
+.hairline{height:2px;background:#EAD9BE;border-radius:2px;margin:14px 0}
+/* 机器人气泡 */
+.robot-row{display:flex;align-items:flex-start;gap:10px;margin:14px 0}
+.robot-face{width:52px;height:52px;flex:0 0 52px;background:#E8703A;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 3px 0 #b8532a}
+.bubble{position:relative;background:#fff;border:2px solid #EAD9BE;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.7;flex:1;min-height:52px}
+.bubble:before{content:"";position:absolute;left:-10px;top:16px;border:5px solid transparent;border-right:8px solid #EAD9BE}
+.bubble b{color:#E8703A}
+.bubble .gate{color:#3F7A5A;font-weight:bold}
+/* 大楼区 */
+.site{display:flex;gap:12px;margin-top:6px}
+.tower-wrap{flex:0 0 150px;display:flex;flex-direction:column;align-items:center}
+.tower{position:relative;width:110px;min-height:230px;display:flex;flex-direction:column-reverse;justify-content:flex-start;align-items:center;padding-bottom:8px;transition:transform .4s}
+.floor{width:96px;height:30px;border-radius:7px;margin-top:4px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 0 rgba(51,38,26,.15);animation:drop .35s}
+@keyframes drop{from{transform:translateY(-16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.tower.wob1{transform:rotate(-2.5deg)}
+.tower.wob2{transform:rotate(4deg)}
+.tower.wob3{transform:rotate(8deg) translateY(6px)}
+.tower.collapsed{transform:rotate(72deg) translateY(60px);opacity:.25;transition:transform 1s ease-in,opacity 1s}
+.highway{position:absolute;right:-14px;top:0;bottom:8px;width:8px;border-radius:4px;background:repeating-linear-gradient(180deg,#F4B942 0 12px,#E8703A 12px 24px);box-shadow:0 0 8px rgba(244,185,66,.8);display:none}
+.tower.has-hwy .highway{display:block}
+.tower-cap{font-size:12px;color:#8A7A66;margin-top:6px;text-align:center}
+/* 图纸 */
+.blueprint{flex:1;background:#F6EBD8;border:2px solid #EAD9BE;border-radius:14px;padding:10px 12px;min-height:230px}
+.bp-title{font-size:13px;font-weight:bold;color:#3F7A5A;margin-bottom:8px}
+.bp-empty{font-size:13px;color:#8A7A66;line-height:1.6}
+.clue{display:inline-block;background:#fff;border:2px solid #3F7A5A;border-radius:999px;padding:4px 10px;font-size:12.5px;margin:0 6px 6px 0;color:#33261A;animation:pop .3s}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+/* 发现卡 */
+.find-card{background:#fff;border:3px solid #E8703A;border-radius:18px;padding:22px 18px;text-align:center;box-shadow:0 4px 0 #EAD9BE;min-height:110px;display:flex;flex-direction:column;justify-content:center;gap:6px;margin-top:14px}
+.find-card .emo{font-size:42px}
+.find-card .txt{font-size:18px;line-height:1.6;font-weight:bold}
+.find-card.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.progress{font-size:13px;color:#8A7A66;text-align:center;margin-top:8px}
+/* 选择按钮 */
+.choice-row{display:flex;gap:10px;margin-top:14px}
+.choice-row .btn{margin-top:0;flex:1;font-size:14.5px;padding:14px 6px;line-height:1.4}
+/* 反馈 */
+.feedback{margin-top:12px;border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.7;display:none}
+.feedback.show{display:block}
+.feedback.good{background:#e8f3ec;border:2px solid #3F7A5A;color:#2c5942}
+.feedback.bad{background:#fdeee4;border:2px solid #E8703A;color:#a34d22}
+/* 遮罩 */
+#overlay{position:fixed;inset:0;background:rgba(51,38,26,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.ov-card{background:#FFF9EF;border-radius:20px;padding:28px 22px;max-width:420px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.ov-emo{font-size:64px}
+.ov-title{font-size:24px;font-weight:bold;color:#E8703A;margin:8px 0}
+.ov-body{font-size:15px;line-height:1.8;color:#33261A;margin-bottom:8px}
+/* 证书 */
+.cert{background:#fff;border:4px solid #F4B942;border-radius:18px;padding:26px 20px;text-align:center;margin-top:16px;box-shadow:0 4px 0 #EAD9BE}
+.cert h2{font-size:24px;color:#E8703A;margin-bottom:6px}
+.cert .cert-name{font-size:15px;color:#8A7A66;margin-bottom:12px}
+.badge-row{display:flex;justify-content:center;gap:14px;margin:14px 0}
+.badge-item{width:96px;background:#F6EBD8;border-radius:14px;padding:12px 6px;font-size:12px;line-height:1.5}
+.badge-item .be{font-size:34px}
+.cert .stats{font-size:14px;color:#3F7A5A;font-weight:bold;line-height:1.8}
+.home-badges{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.home-badge{font-size:12px;background:#F6EBD8;border-radius:999px;padding:6px 12px;color:#8A7A66}
+.home-badge.got{background:#3F7A5A;color:#fff}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#33261A;color:#FFF9EF;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+/* 答题选项 */
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.opt{background:#fff;border:3px solid #EAD9BE;border-radius:14px;padding:14px;font-size:17px;font-weight:bold;text-align:center;cursor:pointer;transition:transform .08s}
+.opt:active{transform:scale(.96)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 首页 -->
+  <div id="scr-home">
+    <div style="text-align:center;margin-top:18px">
+      <div class="kicker">AI 十哲 · 第四课配套游戏</div>
+      <h1 class="title">高速公路工程师<br>帮 AI 盖大楼</h1>
+      <div class="sub">AI 大楼盖得越高反而越笨？<br>找出原因，修一条高速公路！</div>
+    </div>
+    <div class="robot-row">
+      <div class="robot-face">🤖</div>
+      <div class="bubble" id="home-bubble"></div>
+    </div>
+    <div style="background:#F6EBD8;border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.9;margin-top:6px">
+      🏗️ <b>三关工程</b><br>
+      第一关 · 歪歪扭扭的普通楼 —— 找出<b>楼为什么会塌</b><br>
+      第二关 · 高速公路通车啦 —— <b>原话直达 + 只补新发现</b><br>
+      第三关 · 挑战 152 层 —— 不靠谱的观察<b>直接通过</b>！
+    </div>
+    <button class="btn btn-orange" id="btn-start">🛣️ 开工，当工程师！</button>
+    <div class="home-badges" id="home-badges"></div>
+    <div style="text-align:center;font-size:12px;color:#8A7A66;margin-top:16px">和孩子一起学AI · 不用从头学，只学差多少 🛣️</div>
+  </div>
+
+  <!-- 游戏页 -->
+  <div id="scr-play" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="kicker" id="lv-kicker">第一关</div>
+      <div class="progress" id="lv-progress"></div>
+    </div>
+    <h1 class="title" style="font-size:24px" id="lv-name"></h1>
+    <div class="hairline"></div>
+
+    <div class="robot-row">
+      <div class="robot-face">🤖</div>
+      <div class="bubble" id="play-bubble"></div>
+    </div>
+
+    <div class="site">
+      <div class="tower-wrap">
+        <div class="tower" id="tower"><div class="highway"></div></div>
+        <div class="tower-cap" id="tower-cap">0 层</div>
+      </div>
+      <div class="blueprint">
+        <div class="bp-title">📐 图纸（大楼现在的理解）</div>
+        <div id="bp-body"></div>
+      </div>
+    </div>
+
+    <div class="find-card" id="find-card">
+      <div class="emo" id="card-emo"></div>
+      <div class="txt" id="card-txt"></div>
+    </div>
+    <div class="progress" id="card-progress"></div>
+
+    <div class="choice-row" id="choice-row">
+      <button class="btn btn-green hidden" id="btn-highway">🛣️ 高速公路<br><small style="font-weight:normal">原话直达 + 补新发现</small></button>
+      <button class="btn btn-soft hidden" id="btn-pass">⬆️ 直接通过<br><small style="font-weight:normal">这条不靠谱，不加</small></button>
+      <button class="btn btn-soft hidden" id="btn-rewrite">🔄 整层重写<br><small style="font-weight:normal">只留新发现</small></button>
+      <button class="btn btn-soft hidden" id="btn-keep-old">📥 留下旧图纸</button>
+      <button class="btn btn-soft hidden" id="btn-keep-new">📤 只留新发现</button>
+    </div>
+
+    <div class="opts hidden" id="opts"></div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- 证书页 -->
+  <div id="scr-cert" class="hidden">
+    <div style="text-align:center;margin-top:10px">
+      <div class="kicker">全部工程竣工</div>
+      <h1 class="title">152 层，封顶！</h1>
+    </div>
+    <div class="cert">
+      <div style="font-size:44px">📜</div>
+      <h2>ResNet 特级工程师证书</h2>
+      <div class="cert-name">授予：为 AI 修好高速公路的小工程师</div>
+      <div class="badge-row" id="cert-badges"></div>
+      <div class="stats" id="cert-stats"></div>
+      <div style="font-size:13px;color:#8A7A66;margin-top:12px;line-height:1.8">
+        你掌握了 ResNet 的全部秘密：<br>
+        <b style="color:#3F7A5A">原话直达</b> 不丢信息 · <b style="color:#3F7A5A">只补差距</b> 层层进步 · <b style="color:#3F7A5A">直接通过</b> 拒绝干扰<br>
+        <b>不用从头学，只学差多少！</b>
+      </div>
+    </div>
+    <button class="btn btn-orange" id="btn-restart">🔄 再玩一次</button>
+    <div style="text-align:center;font-size:12px;color:#8A7A66;margin-top:14px">截图发群里，找老师领奖状 🏆<br>和孩子一起学AI · AI十哲 第四课</div>
+  </div>
+
+</div>
+
+<!-- 过关遮罩 -->
+<div id="overlay" class="hidden">
+  <div class="ov-card">
+    <div class="ov-emo" id="ov-emo"></div>
+    <div class="ov-title" id="ov-title"></div>
+    <div class="ov-body" id="ov-body"></div>
+    <button class="btn btn-orange" id="btn-next">继续 ▶</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+(function(){
+'use strict';
+var AUTOTEST = location.search.indexOf('autotest') >= 0;
+
+/* ============ 关卡数据 ============ */
+/* act 取值：
+   'keep'  = 本层二选一（旧/新），都会丢信息（第一关，体验退化）
+   'hwy'   = 正确是高速公路（第二关）
+   'add'   = 正确是加上去（第三关，靠谱观察）
+   'pass'  = 正确是直接通过（第三关，不靠谱观察）
+*/
+var LEVELS = [
+{
+  kicker:'第一关', name:'歪歪扭扭的普通楼',
+  intro:'你好，我是<b>小建</b>！科学家们让我盖「认图片大楼」：每盖一层，我就更聪明一点。可现在<b>高速公路还没发明</b>——每层工人都要把图纸<b>重新画一遍，只能留一句话</b>。你来帮他们选吧……',
+  hwy:false, passBtn:false,
+  badge:'真相见证者', badgeEmo:'👀',
+  startClue:'有一个圆圆的东西',
+  floors:[
+    {emo:'🔴', text:'第 2 层工人：我又发现——它是红色的！（图纸只能留一句话）'},
+    {emo:'🌿', text:'第 3 层工人：我又发现——上面有一根小梗！（还是只能留一句）'},
+    {emo:'😋', text:'第 4 层工人：我又发现——咬起来脆脆甜甜的！'},
+    {emo:'🌳', text:'第 5 层工人：我又发现——它长在树上！'}
+  ],
+  collapse:'轰隆——大楼塌了！<br>每一层都很努力，可图纸上永远只剩一句话：留了新的就丢旧的，留了旧的就没新的。<b>不是工人不努力，是楼的设计有问题！</b>科学家管这叫「退化」——楼越高，丢得越多。',
+  quiz:[]
+},
+{
+  kicker:'第二关', name:'高速公路通车啦',
+  intro:'好消息！何恺明爷爷发明了<b>高速公路</b>🛣️：旧图纸<span class="gate">原样直达楼顶</span>，每层只要<b>补一句新发现</b>。这回我们重新盖——每条新发现来了，选「高速公路」就对了！',
+  hwy:true, passBtn:false,
+  badge:'高速工程师', badgeEmo:'🛣️',
+  startClue:'有一个圆圆的东西',
+  floors:[
+    {emo:'🔴', text:'第 2 层发现：它是红色的！', act:'hwy'},
+    {emo:'🌿', text:'第 3 层发现：上面有一根小梗！', act:'hwy'},
+    {emo:'😋', text:'第 4 层发现：咬起来脆脆甜甜的！', act:'hwy'},
+    {emo:'🌳', text:'第 5 层发现：它长在树上！', act:'hwy'},
+    {emo:'🧒', text:'第 6 层发现：很多小朋友都爱吃！', act:'hwy'}
+  ],
+  quiz:[
+    {q:'大楼封顶！图纸上拼起来——这是什么水果？', opts:['🍎 苹果','🍉 西瓜','🏀 篮球'], ans:0,
+     tell:'答对啦！圆圆的 + 红色 + 小梗 + 脆甜 + 长在树上——<b>每条线索都还在</b>，这就是高速公路的威力！'},
+    {q:'它长在哪里？', opts:['🌳 树上','🕳️ 地里','🌊 水里'], ans:0,
+     tell:'没错！第 5 层的发现顺着高速公路直达楼顶，一句没丢！'}
+  ]
+},
+{
+  kicker:'第三关', name:'挑战 152 层',
+  intro:'终极工程！这回工人里混进了<b>不靠谱的观察</b>🙈。靠谱的：🛣️ 加上去；不靠谱或没用的：<span class="gate">⬆️ 直接通过</span>（这层什么都不加，信息原样上去）。全对才能封顶 152 层！',
+  hwy:true, passBtn:true,
+  badge:'摩天楼大师', badgeEmo:'🏙️',
+  startClue:'它是个大家伙',
+  floors:[
+    {emo:'👃', text:'观察员：它有一条长长的鼻子！', act:'add', clue:'有长鼻子'},
+    {emo:'🎨', text:'观察员：它是……蓝色的？（等等，刚才逆光没看清）', act:'pass'},
+    {emo:'👂', text:'观察员：它的耳朵像两把大扇子！', act:'add', clue:'耳朵像大扇子'},
+    {emo:'🕊️', text:'观察员：我觉得它会飞！（真的吗？）', act:'pass'},
+    {emo:'🧱', text:'观察员：它的身体像一堵墙那么重！', act:'add', clue:'身体非常重'},
+    {emo:'☀️', text:'观察员：今天天气真不错！（这和图片有关系吗？）', act:'pass'},
+    {emo:'💦', text:'观察员：它的鼻子会喷水！', act:'add', clue:'鼻子会喷水'},
+    {emo:'🧮', text:'观察员：我猜它会算乘法！（有证据吗？）', act:'pass'}
+  ],
+  quiz:[
+    {q:'大楼封顶！图纸上拼起来——这是什么动物？', opts:['🐘 大象','🐋 鲸鱼','🦒 长颈鹿'], ans:0,
+     tell:'对啦！长鼻子 + 大耳朵 + 重 + 喷水——靠谱线索全留下，<b>不靠谱的全被「直接通过」拦住了</b>！'},
+    {q:'它用什么喷水？', opts:['👃 长鼻子','🌀 尾巴','👂 耳朵'], ans:0,
+     tell:'满分！该加的加、该放的放——<b>你的大楼 152 层都稳稳的</b>！'}
+  ]
+}
+];
+
+/* ============ 状态 ============ */
+var S;
+function freshState(){
+  return {
+    scr:'scr-home',
+    level:0, floor:0, phase:'floor', qi:0,
+    clues:[], wobble:0,
+    mistakes:0, answered:0, totalFloors:0,
+    badges:{}, done:false
+  };
+}
+S = freshState();
+
+/* ============ 工具 ============ */
+function $(id){ return document.getElementById(id); }
+var typeTimer = null;
+function typeBubble(el, text){
+  if(typeTimer){ clearInterval(typeTimer); typeTimer = null; }
+  if(AUTOTEST){ el.innerHTML = text; return; }
+  var plain = text.replace(/<[^>]+>/g,'');
+  var i = 0;
+  el.textContent = '';
+  typeTimer = setInterval(function(){
+    i += 2;
+    el.textContent = plain.slice(0, i);
+    if(i >= plain.length){ clearInterval(typeTimer); typeTimer = null; el.innerHTML = text; }
+  }, 24);
+}
+var toastTimer = null;
+function toast(msg){
+  var t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+}
+function show(id){
+  ['scr-home','scr-play','scr-cert'].forEach(function(s){
+    $(s).classList.toggle('hidden', s !== id);
+  });
+  S.scr = id;
+  window.scrollTo(0,0);
+}
+function feedback(kind, html){
+  var f = $('feedback');
+  f.className = 'feedback show ' + kind;
+  f.innerHTML = html;
+}
+function clearFeedback(){
+  var f = $('feedback');
+  f.className = 'feedback';
+  f.innerHTML = '';
+}
+
+/* ============ 渲染 ============ */
+var FLOOR_COLORS = ['#F4B942','#E8703A','#3F7A5A','#E89A6B','#8FBF9F','#F2C84B'];
+function renderHomeBadges(){
+  var html = '';
+  LEVELS.forEach(function(L){
+    var got = S.badges[L.badge];
+    html += '<span class="home-badge' + (got ? ' got' : '') + '">' + L.badgeEmo + ' ' + L.badge + (got ? ' ✓' : '') + '</span>';
+  });
+  $('home-badges').innerHTML = html;
+}
+function renderLevelHead(){
+  var L = LEVELS[S.level];
+  $('lv-kicker').textContent = L.kicker;
+  $('lv-name').textContent = L.name;
+}
+function renderTower(collapsed){
+  var t = $('tower');
+  var hwy = '<div class="highway"></div>';
+  var html = hwy;
+  for(var i = 0; i < S.totalFloors; i++){
+    html += '<div class="floor" style="background:' + FLOOR_COLORS[i % FLOOR_COLORS.length] + '">' + (i+1) + '</div>';
+  }
+  t.innerHTML = html;
+  t.className = 'tower' + (LEVELS[S.level].hwy ? ' has-hwy' : '') +
+    (collapsed ? ' collapsed' : (S.wobble > 0 ? ' wob' + Math.min(3, S.wobble) : ''));
+  $('tower-cap').textContent = S.totalFloors + ' 层' + (S.wobble > 0 && !collapsed ? ' · 晃' + S.wobble + ' 次' : '');
+}
+function renderBlueprint(){
+  var body = $('bp-body');
+  if(S.clues.length === 0){
+    body.innerHTML = '<div class="bp-empty">（图纸还是空的）</div>';
+    return;
+  }
+  var html = '';
+  S.clues.forEach(function(c){ html += '<span class="clue">' + c + '</span>'; });
+  body.innerHTML = html;
+}
+function renderFloor(){
+  var L = LEVELS[S.level];
+  var f = L.floors[S.floor];
+  $('card-emo').textContent = f.emo;
+  $('card-txt').textContent = f.text;
+  $('card-progress').textContent = '施工 ' + (S.floor+2) + ' / ' + (L.floors.length+1) + ' 层';
+  $('lv-progress').textContent = '';
+  // 按钮配置
+  $('btn-highway').classList.toggle('hidden', !(L.hwy));
+  $('btn-pass').classList.toggle('hidden', !(L.passBtn));
+  $('btn-rewrite').classList.toggle('hidden', !(L.hwy));
+  $('btn-keep-old').classList.toggle('hidden', L.hwy);
+  $('btn-keep-new').classList.toggle('hidden', L.hwy);
+  $('opts').classList.add('hidden');
+  $('find-card').classList.remove('hidden');
+}
+function renderQuiz(){
+  var L = LEVELS[S.level];
+  var q = L.quiz[S.qi];
+  $('card-emo').textContent = '❓';
+  $('card-txt').textContent = q.q;
+  $('card-progress').textContent = '验收 ' + (S.qi+1) + ' / ' + L.quiz.length;
+  $('lv-progress').textContent = '🏗️ 对照图纸回答';
+  $('choice-row').querySelectorAll('.btn').forEach(function(b){ b.classList.add('hidden'); });
+  var html = '';
+  q.opts.forEach(function(o, i){
+    html += '<div class="opt" data-idx="' + i + '">' + o + '</div>';
+  });
+  $('opts').innerHTML = html;
+  $('opts').classList.remove('hidden');
+  var opts = document.querySelectorAll('#opts .opt');
+  for(var j = 0; j < opts.length; j++){
+    opts[j].addEventListener('click', onOptTap);
+  }
+}
+
+/* ============ 流程 ============ */
+function startLevel(idx){
+  S.level = idx; S.floor = 0; S.qi = 0; S.phase = 'floor';
+  S.clues = [LEVELS[idx].startClue]; S.wobble = 0; S.totalFloors = 1;
+  renderLevelHead();
+  clearFeedback();
+  renderTower(false);
+  renderBlueprint();
+  renderFloor();
+  show('scr-play');
+  typeBubble($('play-bubble'), LEVELS[idx].intro);
+}
+function curFloor(){ return LEVELS[S.level].floors[S.floor]; }
+
+/* 第一关：二选一，都丢信息 */
+function chooseKeep(keepNew){
+  if(S.phase !== 'floor') return;
+  var f = curFloor();
+  var newClue = f.text.match(/发现——(.+?)！/) || f.text.match(/发现：(.+?)！/);
+  var newText = newClue ? newClue[1] : f.text;
+  S.clues = [keepNew ? newText : S.clues[0]];
+  S.wobble++;
+  S.totalFloors++;
+  renderTower(false);
+  renderBlueprint();
+  feedback('bad', keepNew ? '😰 留下了新发现，可旧图纸被丢掉了……楼晃了一下！' : '😰 留下旧图纸，可新发现白费了……楼晃了一下！');
+  setTimeout(function(){
+    S.floor++;
+    if(S.floor < LEVELS[S.level].floors.length){
+      clearFeedback();
+      renderFloor();
+    } else {
+      collapse();
+    }
+  }, AUTOTEST ? 0 : 900);
+}
+function collapse(){
+  S.phase = 'collapsed';
+  renderTower(true);
+  $('find-card').classList.add('hidden');
+  $('choice-row').querySelectorAll('.btn').forEach(function(b){ b.classList.add('hidden'); });
+  var L = LEVELS[S.level];
+  setTimeout(function(){
+    S.badges[L.badge] = true;
+    $('ov-emo').textContent = '💥';
+    $('ov-title').textContent = '大楼塌了……但找到了真相！';
+    $('ov-body').innerHTML = L.collapse + '<br><br>🎖️ 获得徽章 <b>' + L.badge + '</b>——下一站：给大楼修高速公路！';
+    $('btn-next').textContent = '修高速公路去 ▶';
+    $('overlay').classList.remove('hidden');
+  }, AUTOTEST ? 0 : 1200);
+}
+
+/* 第二三关：高速公路 / 重写 / 直接通过 */
+function build(act){
+  if(S.phase !== 'floor') return;
+  var L = LEVELS[S.level];
+  var f = curFloor();
+  if(act !== f.act){
+    S.mistakes++;
+    $('find-card').classList.remove('shake');
+    void $('find-card').offsetWidth;
+    $('find-card').classList.add('shake');
+    if(f.act === 'hwy'){
+      feedback('bad', '🤔 这条新发现很靠谱！选「🛣️ 高速公路」：旧图纸直达 + 新发现补上，一句不丢。');
+    } else if(f.act === 'add'){
+      feedback('bad', '🤔 这条观察有凭有据，该「🛣️ 加上去」——直接通过的话，好线索就浪费了！');
+    } else {
+      feedback('bad', '🤔 这条观察不靠谱/没用！加到图纸上会误导大楼——让它「⬆️ 直接通过」！');
+    }
+    return;
+  }
+  if(act === 'rewrite'){
+    /* 防御：第二三关 rewrite 永远是错的，已在上面拦截 */
+    return;
+  }
+  if(act === 'hwy' || act === 'add'){
+    if(f.clue){ S.clues.push(f.clue); }
+    else {
+      var m = f.text.match(/发现：(.+?)！/);
+      if(m) S.clues.push(m[1]);
+    }
+    S.totalFloors++;
+    feedback('good', '🛣️ 旧图纸原样直达 + 新发现补上——大楼又高一层，稳稳的！');
+  } else {
+    S.totalFloors++;
+    feedback('good', '⬆️ 好判断！这条不进图纸，信息原样上楼——「不学」也是一种学！');
+  }
+  renderTower(false);
+  renderBlueprint();
+  setTimeout(function(){
+    S.floor++;
+    if(S.floor < L.floors.length){
+      clearFeedback();
+      renderFloor();
+      nudge();
+    } else if(L.quiz.length){
+      S.phase = 'quiz'; S.qi = 0;
+      clearFeedback();
+      renderQuiz();
+      typeBubble($('play-bubble'), '大楼盖好了！<b>验收时间</b>——对照图纸回答，看看一句话有没有丢！');
+    }
+  }, AUTOTEST ? 0 : 650);
+}
+function nudge(){
+  var hints = ['这条新发现靠谱吗？','好线索要留住！','看错的、无关的，直接通过！','图纸越攒越全啦！'];
+  typeBubble($('play-bubble'), hints[S.floor % hints.length]);
+}
+function onOptTap(ev){
+  var idx = parseInt(ev.currentTarget.getAttribute('data-idx'), 10);
+  var L = LEVELS[S.level];
+  var q = L.quiz[S.qi];
+  if(idx !== q.ans){
+    S.mistakes++;
+    ev.currentTarget.style.borderColor = '#E8703A';
+    feedback('bad', '🤔 再对对图纸——线索都在上面写着呢！');
+    return;
+  }
+  S.answered++;
+  feedback('good', q.tell);
+  setTimeout(function(){
+    S.qi++;
+    if(S.qi < L.quiz.length){
+      clearFeedback();
+      renderQuiz();
+    } else {
+      levelComplete();
+    }
+  }, AUTOTEST ? 0 : 1400);
+}
+function levelComplete(){
+  var L = LEVELS[S.level];
+  S.badges[L.badge] = true;
+  S.phase = 'floor';
+  var isLast = S.level >= LEVELS.length - 1;
+  $('ov-emo').textContent = L.badgeEmo;
+  $('ov-title').textContent = '获得徽章 · ' + L.badge;
+  $('ov-body').innerHTML = (isLast
+    ? '靠谱线索全保留，不靠谱的全放行——<b>大楼封顶 152 层！</b>这就是 2015 年震惊世界的 ResNet！'
+    : '原话直达 + 只补新发现——<b>这座楼又高又稳，一句话都没丢！</b>');
+  $('btn-next').textContent = isLast ? '领取证书 🎓' : '下一关 ▶';
+  $('overlay').classList.remove('hidden');
+}
+function nextFromOverlay(){
+  if($('overlay').classList.contains('hidden')) return;
+  $('overlay').classList.add('hidden');
+  if(S.level < LEVELS.length - 1){
+    startLevel(S.level + 1);
+  } else {
+    showCert();
+  }
+}
+function showCert(){
+  S.done = true;
+  var html = '';
+  LEVELS.forEach(function(L){
+    html += '<div class="badge-item"><div class="be">' + L.badgeEmo + '</div>' + L.badge + '</div>';
+  });
+  $('cert-badges').innerHTML = html;
+  var total = 0; LEVELS.forEach(function(L){ total += L.quiz.length; });
+  $('cert-stats').innerHTML = '验收答对 ' + S.answered + ' / ' + total + ' 题<br>小返工 ' + S.mistakes + ' 次（每次返工都让大楼更稳！）';
+  show('scr-cert');
+}
+function softRestart(){
+  S = freshState();
+  renderHomeBadges();
+  show('scr-home');
+  typeBubble($('home-bubble'), '嗨！我是<b>小建</b>🤖 我的「认图片大楼」总是盖不高——盖到 8 层还行，再往上反而变笨了！听说有个办法叫<b>高速公路</b>……<b>你来当工程师，帮帮我好吗？</b>');
+}
+
+/* ============ 绑定 ============ */
+$('btn-start').addEventListener('click', function(){ startLevel(0); });
+$('btn-keep-old').addEventListener('click', function(){ chooseKeep(false); });
+$('btn-keep-new').addEventListener('click', function(){ chooseKeep(true); });
+$('btn-highway').addEventListener('click', function(){ build(curFloor().act === 'add' ? 'add' : 'hwy'); });
+$('btn-pass').addEventListener('click', function(){ build('pass'); });
+$('btn-rewrite').addEventListener('click', function(){ build('rewrite'); });
+$('btn-next').addEventListener('click', nextFromOverlay);
+$('btn-restart').addEventListener('click', function(){
+  var done = false;
+  try{ setTimeout(function(){ if(!done){ location.reload(); } }, 450); }catch(e){}
+  softRestart();
+  done = true;
+});
+
+/* ============ 调试句柄 ============ */
+window.__DBG = { state:function(){
+  return { scr:S.scr, level:S.level, floor:S.floor, phase:S.phase, qi:S.qi,
+           clues:S.clues.length, wobble:S.wobble, floors:S.totalFloors,
+           mistakes:S.mistakes, answered:S.answered,
+           badges:Object.keys(S.badges).length, done:S.done,
+           overlay: !$('overlay').classList.contains('hidden') };
+}};
+
+/* ============ 启动 ============ */
+renderHomeBadges();
+typeBubble($('home-bubble'), '嗨！我是<b>小建</b>🤖 我的「认图片大楼」总是盖不高——盖到 8 层还行，再往上反而变笨了！听说有个办法叫<b>高速公路</b>……<b>你来当工程师，帮帮我好吗？</b>');
+})();
+</script>
+</body>
+</html>
